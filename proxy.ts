@@ -21,4 +21,4 @@ export async function proxy(request: NextRequest) {
   await supabase.auth.getClaims();
   return response;
 }
-export const config = {matcher: ['/espace', '/gestion', '/application-contenu', '/api/config', '/api/progress', '/api/admin', '/api/checkout']};
+export const config = {matcher: ['/espace', '/pratique', '/gestion', '/application-contenu', '/api/config', '/api/progress', '/api/admin', '/api/checkout', '/api/practice/:path*', '/api/outlook/:path*']};
