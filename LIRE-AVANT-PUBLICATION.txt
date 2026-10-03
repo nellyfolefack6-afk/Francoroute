@@ -1,0 +1,39 @@
+FRANCOROUTE — VERSION COMPLÈTE DU 3 OCTOBRE 2026
+
+Cette archive réunit le visuel approuvé dans FrancoRoute-site-complet.html et
+le projet Next.js qui gère les comptes, les paiements et les réservations Outlook.
+Ce n’est pas un simple HTML compressé ni un correctif partiel.
+
+Contenu conservé : fond blanc, bandes bleues, dessin voiture/permis/clés,
+FR / EN / ES / AR pour le site de présentation, programme BDE (20 h Théorie,
+10 h Exercices, 10 h Pratique), tarifs, préparation de 1 h 30 avant examen,
+licence MTO L3J4 publique avec adresse masquée, témoignages, vidéo et application
+G1, G2 et G Full à 28 CAD + taxes pour 21 jours.
+
+INSTALLER DANS GITHUB
+1. Extraire le ZIP avec « Extraire tout ».
+2. Ouvrir le dossier qui contient package.json, netlify.toml et le dossier app.
+3. Dans le dépôt FrancoRoute, Add file > Upload files : glisser les dossiers ET
+   les fichiers ensemble. Conserver leurs chemins. Ne pas envoyer le ZIP lui-même.
+4. Vérifier que app/page.tsx, components/marketing.tsx et public/media apparaissent.
+5. Enregistrer les modifications sur la branche de publication liée à Netlify.
+   La configuration netlify.toml incluse conserve le serveur Next.js.
+
+Si vous intégrez cette version par la proposition GitHub fournie, inutile de
+réenvoyer les mêmes fichiers du ZIP : celui-ci peut être conservé en sauvegarde.
+Le fichier HTML autonome joint précédemment n’a pas à remplacer app/page.tsx.
+
+CE QU’IL RESTE À CONFIGURER UNE FOIS
+Les comptes Supabase (et SMTP), Resend, Stripe et l’application Microsoft doivent
+être configurés avec les variables de .env.example. Aucune clé privée n’est incluse.
+La préparation de la base se fait au déploiement de production une fois les
+paramètres de la base renseignés. L’autorisation Outlook se fait ensuite dans
+/gestion. Voir DEMARRER-ICI.txt et ACTIVER-OUTLOOK.txt.
+
+Les créneaux affichés proviennent du serveur ; il n’y a pas de faux horaires.
+Les achats sont proposés uniquement quand le paiement est configuré.
+Les formulaires de contact et de témoignage préparent un courriel à envoyer
+avec votre messagerie ; ils ne prétendent pas l’avoir envoyé automatiquement.
+
+Le code est compilé et vérifié localement. Cela ne signifie pas que les comptes,
+les courriels, les paiements et Outlook sont déjà activés en production.

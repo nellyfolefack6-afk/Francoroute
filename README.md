@@ -2,6 +2,8 @@
 
 Version blanche et bleue pour **francoroute.com**. Le site comprend le programme BDE, les valeurs, un agenda de premiers appels de 15 minutes et l’application privée **G1, G2 et G Full**, proposée à **28 $ CA + taxes pour 21 jours**. Aucun renouvellement automatique.
 
+La présentation multilingue approuvée est maintenant intégrée au projet Next.js. Voir **LIRE-AVANT-PUBLICATION.txt** pour cette archive complète.
+
 ## Commencer
 
 Lire d’abord **DEMARRER-ICI.txt** pour l’activation depuis GitHub. **ACTIVER-OUTLOOK.txt** détaille la connexion Microsoft. La base se prépare automatiquement au déploiement de production lorsque DATABASE_URL est configurée.
