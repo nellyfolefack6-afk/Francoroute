@@ -85,9 +85,10 @@ export async function prepareDatabase(env = process.env, args = process.argv.sli
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try { await prepareDatabase(); }
   catch (error) {
+    console.error('DEBUG INFO:', error?.code, '|', error?.message);
     // Never print connection strings, provider errors, certificates or passwords.
     console.error(error?.message === 'MIGRATION_CHANGED'
-      ? 'FrancoRoute : une migration déjà appliquée a été modifiée. Restaurer le fichier d’origine et ajouter une nouvelle migration.'
+      ? 'FrancoRoute : une migration déjà appliquée a été modifiée. Restaurer le fichier d'origine et ajouter une nouvelle migration.'
       : 'FrancoRoute : préparation de la base impossible. Vérifier DATABASE_URL, DATABASE_CA_CERT et les droits du compte dans Netlify. Publication interrompue.');
     process.exitCode = 1;
   }
