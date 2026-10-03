@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "node reparer-francoroute.mjs && npm run build"
   publish = ".next"
 
 [build.environment]
@@ -8,5 +8,3 @@
 
 [functions]
   included_files = ["private/application.html"]
-
-# Netlify installs its Next.js adapter automatically. No static export or SPA redirect.
