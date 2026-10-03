@@ -1,0 +1,133 @@
+FRANCOROUTE — ACTIVER LES RÉSERVATIONS DE PRATIQUE
+
+État de cette livraison
+Le code et la migration sont prêts. Les essais locaux sont réalisés avec des
+services simulés. Cette livraison ne connecte pas, à elle seule, le site en ligne.
+La connexion Outlook dans ChatGPT est indépendante de celle du site Netlify.
+
+Ce que le montage comprend
+- /pratique : connexion client, heures payées/restantes, choix d'un jour et d'un
+  créneau de 60 ou 90 minutes, confirmation et annulation.
+- Lundi à dimanche ; ouverture initiale 9 h, modifiable dans /gestion ; dernière
+  fin de cours à 20 h maximum, heure de l'Est, avec changement d'heure automatique.
+- /gestion : connexion Microsoft, horaires, attribution des heures payées avec
+  une référence de facture unique et validation des prérequis BDE.
+- Les rendez-vous occupés du calendrier « Calendar » de francoroute@outlook.com
+  ferment les créneaux correspondants. Les appels de 15 minutes et les nouvelles
+  réservations de pratique se bloquent mutuellement.
+- Les clients utilisent le même courriel que celui associé à leurs heures.
+- L'achat de l'application à 28 CAD + taxes, pour 21 jours, reste distinct.
+  Il ne crée pas de crédits de conduite. Pour cette version, FrancoRoute valide
+  les paiements des leçons et attribue les heures depuis /gestion.
+
+1. Base de données et connexion client
+Une fois DATABASE_URL configurée, le déploiement Netlify de production applique
+automatiquement supabase/schema.sql puis supabase/outlook-pratique.sql. Aucun
+SQL à copier. La préparation est répétable ; aucun client n'est supprimé.
+Les aperçus GitHub ne lancent jamais de migration. Sans DATABASE_URL, le site
+peut être publié mais les réservations restent indisponibles. Une erreur de
+migration interrompt le nouveau déploiement au lieu de publier une base incomplète.
+DATABASE_URL et DATABASE_CA_CERT doivent être disponibles pour Builds et Functions
+en Production. Les autres secrets du site servent aux Functions. Ne pas partager
+les secrets de production avec les aperçus de branches.
+Configurer la connexion par code email, le modèle supabase/email-code.html et
+un fournisseur SMTP adapté à la production ; le service de test Supabase ne
+permet pas d'envoyer librement à tous les clients.
+Sur Netlify, renseigner les variables de production :
+  SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, DATABASE_URL,
+  SITE_ORIGIN=https://francoroute.com,
+  ADMIN_EMAILS=<les courriels des propriétaires autorisés, séparés par virgules>.
+Ne pas modifier ADMIN_EMAILS avec une valeur reçue d'un visiteur du site.
+
+2. Application Microsoft propre à FrancoRoute
+Depuis Microsoft Entra > App registrations, créer l'application Web
+« FrancoRoute — Réservations ». Choisir une inscription compatible avec les
+comptes Microsoft personnels. Si le compte ne dispose pas d'un annuaire Entra,
+cette étape nécessite d'abord un annuaire/compte administrateur adapté.
+Ajouter exactement ce retour de connexion de type Web :
+  https://francoroute.com/api/outlook/callback
+Permissions déléguées Microsoft Graph : User.Read et Calendars.ReadWrite.
+Le site demande aussi offline_access pour renouveler la connexion côté serveur.
+Ne pas activer les permissions d'application pour lire les boîtes de tous les
+utilisateurs. Ne pas réutiliser l'identifiant d'application de ChatGPT/Outlook.
+Créer un secret client avec une date d'expiration, et prévoir son renouvellement.
+
+3. Secrets Netlify
+Renseigner uniquement dans Netlify > Environment variables :
+  OUTLOOK_CLIENT_ID       : identifiant de l'application créée à l'étape 2
+  OUTLOOK_CLIENT_SECRET   : valeur du secret client (pas son identifiant)
+  OUTLOOK_TOKEN_KEY       : 32 octets aléatoires encodés en base64
+  OUTLOOK_ACCOUNT_EMAIL=francoroute@outlook.com
+La clé de chiffrement peut être générée localement avec :
+  node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+Conserver cette clé dans les secrets du serveur. Ne pas la publier dans Git,
+le HTML, un courriel ou le chat. Sa perte impose de reconnecter Outlook.
+Les jetons Microsoft sont chiffrés dans la base ; aucun jeton n'est envoyé au
+navigateur des clients. Les tables sont inaccessibles aux rôles publics.
+
+4. Publication et autorisation Microsoft
+Installer les fichiers dans leurs dossiers, puis déployer le dépôt GitHub sur
+Netlify avec la configuration Next.js existante. Le script de réparation des
+anciens téléchargements aplatis conserve les fichiers déjà organisés.
+Se connecter sur https://francoroute.com/gestion avec un courriel ADMIN_EMAILS.
+Cliquer « Connecter francoroute@outlook.com », vérifier l'application et les
+permissions affichées par Microsoft, puis autoriser avec ce compte précis.
+Vérifier que /gestion affiche le compte et le calendrier « Calendar » connectés.
+La présence d'une connexion n'exclut pas une expiration/révocation ultérieure :
+en cas de problème, renouveler la connexion depuis le même panneau.
+
+5. Mise en service
+  a) Confirmer l'heure d'ouverture (9 h par défaut) et la dernière fin à 20 h.
+  b) Pour chaque paiement reçu, enregistrer le courriel, les heures et la
+     référence de facture, et confirmer les prérequis BDE si applicables.
+  c) Indiquer au client de se connecter à https://francoroute.com/pratique.
+  d) Vérifier un premier rendez-vous autorisé : inscription dans Outlook,
+     créneau fermé sur le site, solde débité, puis annulation et restitution.
+Les essais locaux ne remplacent pas cette validation avec les vrais services.
+
+Courriels et premiers appels
+L'événement est inscrit dans le calendrier de l'école avec nom, courriel,
+téléphone et durée. Il n'envoie pas d'invitation Outlook au client.
+Les notifications des premiers appels utilisent toujours Resend :
+  RESEND_API_KEY, BOOKING_MAIL_FROM (domaine validé),
+  BOOKING_NOTIFY_EMAIL=francoroute@outlook.com.
+Sans ces paramètres, aucun courriel de notification n'est envoyé. Les cours
+restent consultables dans l'espace client et le calendrier de l'école.
+Les anciens appels sont pris en compte pour bloquer les créneaux du site,
+mais ne sont pas importés automatiquement dans Outlook. Ouvrir les créneaux
+d'appels de 15 minutes dans la section « Vos premiers appels » de /gestion.
+
+Paiement de l'application
+Configurer STRIPE_SECRET_KEY et STRIPE_WEBHOOK_SECRET ainsi que Stripe Tax et
+les paramètres de taxes applicables. PAYMENT_TAX_MODE=exclusive est requis :
+28 CAD avant taxes, 21 jours, sans abonnement. Le webhook est /api/stripe-webhook.
+Les paiements et remboursements des heures de conduite sont validés par l'école
+dans cette version ; il n'y a pas de vente automatique de forfaits de conduite.
+
+Gestion des erreurs et des annulations
+Le site garde un créneau et les crédits bloqués si la réponse Outlook est
+incertaine. L'interface affiche « Confirmation Outlook en cours » ; utiliser
+« Synchroniser » dans /gestion ou « Vérifier la confirmation » côté client.
+La même référence Microsoft évite les doublons lors d'une nouvelle tentative.
+Les heures ne sont rendues qu'après suppression confirmée de l'événement.
+Un client peut annuler un cours futur ; l'école garde la gestion des cours passés.
+Pour déplacer un cours, l'annuler sur le site, puis réserver le nouvel horaire.
+Ne pas déplacer ou supprimer directement dans Outlook les rendez-vous pris
+sur le site : leurs soldes ne seraient pas mis à jour. Les événements personnels
+« Occupé » ajoutés dans Outlook sont relus à chaque recherche et réservation.
+Une modification manuelle simultanée dans Outlook et une réservation sur le
+site ne peuvent pas former une transaction atomique entre les deux services.
+Contrôler ce cas si plusieurs personnes gèrent le même calendrier.
+
+Vérifications effectuées
+npm run check
+npm run build
+node scripts/verify-francoroute.mjs
+node scripts/verify-outlook.mjs
+node scripts/verify-database-setup.mjs
+Les tests utilisent PostgreSQL local en mémoire et un service Microsoft simulé.
+
+Documentation Microsoft :
+https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-auth-code-flow
+https://learn.microsoft.com/en-us/graph/api/calendar-list-calendarview?view=graph-rest-1.0
+https://learn.microsoft.com/en-us/graph/api/calendar-post-events?view=graph-rest-1.0
