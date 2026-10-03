@@ -2,11 +2,13 @@
 
 Version blanche et bleue pour **francoroute.com**. Le site comprend le programme BDE, les valeurs, un agenda de premiers appels de 15 minutes et l’application privée **G1, G2 et G Full**, proposée à **28 $ CA + taxes pour 21 jours**. Aucun renouvellement automatique.
 
+La présentation multilingue approuvée est maintenant intégrée au projet Next.js. Voir **LIRE-AVANT-PUBLICATION.txt** pour cette archive complète.
+
 ## Commencer
 
 Lire d’abord **DEMARRER-ICI.txt** pour l’activation depuis GitHub. **ACTIVER-OUTLOOK.txt** détaille la connexion Microsoft. La base se prépare automatiquement au déploiement de production lorsque DATABASE_URL est configurée.
 
-1. Le code est disponible dans [la proposition GitHub #1](https://github.com/nellyfolefack6-afk/Francoroute/pull/1). Après vérification, fusionnez-la dans `main` pour déclencher le déploiement Netlify associé à cette branche. Pour une installation manuelle, conservez les dossiers et placez `app` directement à côté de `package.json` ; ne déposez pas le ZIP lui-même dans Git.
+1. Le code est disponible dans [la proposition GitHub #2](https://github.com/nellyfolefack6-afk/Francoroute/pull/2). Après vérification, fusionnez-la dans `main` pour déclencher le déploiement Netlify associé à cette branche. Pour une installation manuelle, conservez les dossiers et placez `app` directement à côté de `package.json` ; ne déposez pas le ZIP lui-même dans Git.
 2. Suivez **INSTALLATION-NETLIFY.txt** pour connecter Supabase, Resend et Stripe, puis votre dépôt à Netlify.
 3. Après le déploiement, ouvrez `/gestion`, connectez-vous avec votre adresse administratrice et ajoutez vos disponibilités.
 

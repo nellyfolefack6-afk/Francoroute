@@ -1,8 +1,8 @@
 FRANCOROUTE — ACTIVER DEPUIS GITHUB
 
 Le code est dans la proposition :
-https://github.com/nellyfolefack6-afk/Francoroute/pull/1
-Branche : codex/outlook-pratique
+https://github.com/nellyfolefack6-afk/Francoroute/pull/2
+Branche : codex/site-complet
 
 1. METTRE LE CODE EN LIGNE
 Dans la proposition GitHub, vérifier les fichiers puis utiliser « Merge pull
