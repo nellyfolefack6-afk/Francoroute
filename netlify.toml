@@ -1,5 +1,5 @@
 [build]
-  command = "node reparer-francoroute.mjs && npm run build"
+  command = "node reparer-francoroute.mjs && npm run build && node scripts/prepare-database.mjs"
   publish = ".next"
 
 [build.environment]
@@ -9,6 +9,5 @@
 [functions]
   included_files = ["private/application.html"]
 
-# Force the Next.js adapter for this former static Netlify project.
 [[plugins]]
   package = "@netlify/plugin-nextjs"

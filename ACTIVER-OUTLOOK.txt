@@ -21,10 +21,15 @@ Ce que le montage comprend
   les paiements des leçons et attribue les heures depuis /gestion.
 
 1. Base de données et connexion client
-Dans le projet Supabase de FrancoRoute :
-  - pour une base neuve, exécuter supabase/schema.sql ;
-  - puis exécuter supabase/outlook-pratique.sql, également sur une base existante.
-La migration est additive et peut être réexécutée. Aucun client n'est supprimé.
+Une fois DATABASE_URL configurée, le déploiement Netlify de production applique
+automatiquement supabase/schema.sql puis supabase/outlook-pratique.sql. Aucun
+SQL à copier. La préparation est répétable ; aucun client n'est supprimé.
+Les aperçus GitHub ne lancent jamais de migration. Sans DATABASE_URL, le site
+peut être publié mais les réservations restent indisponibles. Une erreur de
+migration interrompt le nouveau déploiement au lieu de publier une base incomplète.
+DATABASE_URL et DATABASE_CA_CERT doivent être disponibles pour Builds et Functions
+en Production. Les autres secrets du site servent aux Functions. Ne pas partager
+les secrets de production avec les aperçus de branches.
 Configurer la connexion par code email, le modèle supabase/email-code.html et
 un fournisseur SMTP adapté à la production ; le service de test Supabase ne
 permet pas d'envoyer librement à tous les clients.
@@ -119,6 +124,7 @@ npm run check
 npm run build
 node scripts/verify-francoroute.mjs
 node scripts/verify-outlook.mjs
+node scripts/verify-database-setup.mjs
 Les tests utilisent PostgreSQL local en mémoire et un service Microsoft simulé.
 
 Documentation Microsoft :

@@ -1,7 +1,9 @@
 FRANCOROUTE — INSTALLATION SUR NETLIFY À PARTIR DE GIT
 
+Commencez par DEMARRER-ICI.txt pour le parcours simplifié.
+
 Le site conserve francoroute.com. L’application couvre le G1, le G2 et le G Full.
-Offre : 20 $ CA, paiement unique, accès de 3 semaines (21 jours).
+Offre : 28 $ CA + taxes, paiement unique, accès de 3 semaines (21 jours).
 
 Ce projet inclut le site, le serveur et les branchements nécessaires. Pour recevoir
 les codes de connexion, les notifications de rendez-vous et les paiements réels,
@@ -41,9 +43,12 @@ construit depuis Git pour exécuter ses fonctions serveur.
 
 2. CRÉER LE PROJET SUPABASE
 
-Créez un projet Supabase neuf et gardez son mot de passe de base de données.
-Dans le SQL Editor, collez puis exécutez supabase/schema.sql.
-Cela crée les tables ; aucun compte, achat ou rendez-vous fictif n’est ajouté.
+Utilisez le projet Supabase déjà configuré pour FrancoRoute, ou créez-en un si
+aucun projet n’existe. Une fois DATABASE_URL configurée sur Netlify, le déploiement
+de production prépare automatiquement les tables de base et Outlook. Aucun
+compte, achat ou rendez-vous fictif n’est ajouté. Inutile de copier du SQL.
+Les migrations peuvent aussi être exécutées manuellement depuis le SQL Editor :
+supabase/schema.sql puis supabase/outlook-pratique.sql.
 
 Relevez :
 - SUPABASE_URL : l’URL de votre projet.
@@ -110,16 +115,13 @@ Activez ces événements :
 - charge.refunded
 
 Copiez le secret de signature de cet endpoint dans STRIPE_WEBHOOK_SECRET.
-Aucun produit à créer manuellement : le serveur crée la ligne 20 CAD / 21 jours
+Aucun produit à créer manuellement : le serveur crée la ligne 28 CAD + taxes / 21 jours
 lors de l’ouverture de Stripe Checkout.
 
-Choisissez PAYMENT_TAX_MODE selon votre situation :
-- inclusive : les 20 $ incluent les taxes ; Stripe Tax doit être configuré.
-- exclusive : taxes applicables ajoutées ; Stripe Tax doit être configuré.
-- none : aucune taxe collectée par ce paiement.
+Définissez PAYMENT_TAX_MODE=exclusive : les taxes applicables s’ajoutent
+aux 28 CAD. Stripe Tax et vos paramètres fiscaux doivent être configurés.
+Cette version ne propose pas de paiement sans taxes ni de prix taxes incluses.
 
-Ce choix est laissé vide pour que vous le régliez selon vos obligations.
-Ne sélectionnez pas « none » uniquement pour activer le bouton de paiement.
 Utilisez d’abord les identifiants Stripe de test pour votre vérification interne,
 puis les clés et le webhook de production avant d’accepter des clients.
 Le site public ne contient pas de mode de démonstration ni d’accès gratuit caché.
@@ -131,7 +133,8 @@ existant si c’est celui que vous souhaitez garder.
 
 Réglages :
 - Base directory : vide si package.json est à la racine.
-- Build command : npm run build
+- Build command : celle du fichier netlify.toml (réparation des dossiers,
+  compilation, puis préparation automatique de la base)
 - Publish directory : .next
 - Node.js : 22 (déjà déclaré dans netlify.toml).
 
@@ -141,6 +144,9 @@ redirigeant toutes les pages vers index.html.
 
 Dans Environment variables, ajoutez les valeurs listées dans .env.example.
 Rendez-les accessibles aux fonctions serveur ; gardez les clés privées secrètes.
+DATABASE_URL et, si nécessaire, DATABASE_CA_CERT doivent également être disponibles
+pour Builds en contexte Production. Ne fournissez pas les secrets de production
+aux Deploy Previews ou aux Branch deploys.
 SITE_ORIGIN doit être https://francoroute.com, sans barre oblique finale.
 ADMIN_EMAILS est prérempli avec nellyfolefack6@gmail.com. Modifiez-le si vous
 préférez une autre adresse de gestion. Plusieurs adresses peuvent être séparées
@@ -164,7 +170,7 @@ au moment de la mise en ligne définitive.
 
 - Ouvrez https://francoroute.com/gestion.
 - Connectez-vous avec le courriel inscrit dans ADMIN_EMAILS, puis le code reçu.
-- Ajoutez vos créneaux de 15 minutes. Les horaires sont ceux de Toronto.
+- Ajoutez vos créneaux de 15 minutes. Les horaires sont ceux de l’Est.
   Les clients ne voient que les créneaux ouverts, avec au moins 2 heures de préavis.
 - Effectuez une réservation de contrôle avec vos propres coordonnées.
   Vérifiez le rendez-vous dans /gestion et le courriel dans votre boîte Outlook.
@@ -186,8 +192,8 @@ et simulent les réponses des services externes, sans envoyer de messages ni pay
 
 Vous recevrez les notifications de réservation après la configuration Resend.
 Le ZIP seul ne connecte pas votre boîte mail ni votre compte bancaire.
-Le calendrier est intégré au site. Il n’est pas synchronisé automatiquement avec
-Google Calendar ou Outlook et n’envoie pas de rappels automatiques.
+Le calendrier se synchronise avec Outlook après les étapes d’ACTIVER-OUTLOOK.txt.
+Il n’est pas relié à Google Calendar et n’envoie pas de rappels automatiques.
 
 Pour suivre le site : /gestion.
 Pour les clients et la préparation : /espace.

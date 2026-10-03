@@ -1,10 +1,12 @@
 # FrancoRoute — Git → Netlify
 
-Version blanche et bleue pour **francoroute.com**. Le site comprend le programme BDE, les valeurs, un agenda de premiers appels de 15 minutes et l’application privée **G1, G2 et G Full**, proposée à **20 $ CA pour 21 jours**. Aucun renouvellement automatique.
+Version blanche et bleue pour **francoroute.com**. Le site comprend le programme BDE, les valeurs, un agenda de premiers appels de 15 minutes et l’application privée **G1, G2 et G Full**, proposée à **28 $ CA + taxes pour 21 jours**. Aucun renouvellement automatique.
 
 ## Commencer
 
-1. Décompressez l’archive. Placez **son contenu** dans la racine de votre dépôt Git : `package.json`, `netlify.toml`, `app`, etc. Sur GitHub, utilisez **Add file → Upload files**, puis glissez **les dossiers ET les fichiers** depuis le dossier extrait. Vérifiez que `app/page.tsx` apparaît dans la liste avant de cliquer sur **Commit changes**. Ne déposez pas simplement le ZIP dans Git ou Netlify Drop.
+Lire d’abord **DEMARRER-ICI.txt** pour l’activation depuis GitHub. **ACTIVER-OUTLOOK.txt** détaille la connexion Microsoft. La base se prépare automatiquement au déploiement de production lorsque DATABASE_URL est configurée.
+
+1. Le code est disponible dans [la proposition GitHub #1](https://github.com/nellyfolefack6-afk/Francoroute/pull/1). Après vérification, fusionnez-la dans `main` pour déclencher le déploiement Netlify associé à cette branche. Pour une installation manuelle, conservez les dossiers et placez `app` directement à côté de `package.json` ; ne déposez pas le ZIP lui-même dans Git.
 2. Suivez **INSTALLATION-NETLIFY.txt** pour connecter Supabase, Resend et Stripe, puis votre dépôt à Netlify.
 3. Après le déploiement, ouvrez `/gestion`, connectez-vous avec votre adresse administratrice et ajoutez vos disponibilités.
 
@@ -12,10 +14,10 @@ La configuration Git/Netlify est incluse. Les identifiants privés des services 
 
 ## Fonctionnement
 
-- **Réservations** : créneaux ouverts par FrancoRoute, heure de Toronto, préavis de 2 heures, durée de 15 minutes, protection contre les doubles réservations. Le visiteur obtient une confirmation à l’écran, un ajout au calendrier et un lien d’annulation.
+- **Réservations** : créneaux ouverts par FrancoRoute, heure de l’Est, préavis de 2 heures, durée de 15 minutes, protection contre les doubles réservations. Le visiteur obtient une confirmation à l’écran, un ajout au calendrier et un lien d’annulation.
 - **Courriels** : Resend notifie `francoroute@outlook.com` avec les coordonnées et le téléphone du client. FrancoRoute appelle à l’heure réservée. En cas d’échec du courriel, le rendez-vous reste dans `/gestion`, où une nouvelle tentative est possible. « Transmis » signifie accepté par le fournisseur, sans garantie de classement en boîte principale.
 - **Comptes** : connexion par code courriel Supabase, sessions vérifiées côté serveur. L’adresse inscrite dans `ADMIN_EMAILS` accède à la gestion après vérification de son courriel.
-- **Paiement** : Stripe Checkout, paiement unique de 20 CAD, activation de 21 jours après confirmation serveur. Les remboursements complets notifiés par Stripe retirent l’accès.
+- **Paiement** : Stripe Checkout, paiement unique de 28 CAD + taxes, activation de 21 jours après confirmation serveur. Les remboursements complets notifiés par Stripe retirent l’accès.
 - **Application** : questions et explications G1, situations G2/G Full, astuces, exercices et progression personnelle. Le contenu pédagogique est servi par une route protégée, après connexion et vérification de l’accès. Le programme BDE reste présenté séparément sur le site.
 - **Données** : PostgreSQL Supabase, protégées du navigateur par RLS et par les autorisations des API. Aucune clé de base de données ou de paiement n’est exposée au navigateur.
 
@@ -38,12 +40,13 @@ npm start
 
 - `app/` et `components/` : pages, connexion, réservation, gestion, API.
 - `private/application.html` : application complète, jamais placée dans `public/`.
-- `supabase/schema.sql` : tables PostgreSQL à créer dans votre projet Supabase neuf.
+- `supabase/schema.sql` et `supabase/outlook-pratique.sql` : tables de la base, appliquées automatiquement par `scripts/prepare-database.mjs` en production uniquement.
+- `scripts/verify-database-setup.mjs` : vérification locale de la préparation répétable, de la conservation des données et des erreurs.
 - `lib/booking-mail.ts` : notification de premier appel.
 - `netlify.toml` : configuration de construction Next.js.
 - `.env.example` : liste des variables à définir. Ne mettez jamais de secrets dans Git.
 
-Netlify utilise son adaptateur Next.js automatiquement. Le projet n’utilise pas une exportation HTML statique ni Netlify Forms. Le calendrier est intégré au site, mais il ne se synchronise pas automatiquement avec Google Calendar ou Outlook. Aucun rappel, SMS ou courriel d’annulation n’est envoyé automatiquement ; consultez `/gestion` avant chaque appel.
+Netlify utilise son adaptateur Next.js automatiquement. Le projet n’utilise pas une exportation HTML statique ni Netlify Forms. Après la configuration et le consentement Microsoft, les nouvelles réservations se synchronisent avec Outlook. Google Calendar n’est pas connecté. Les crédits de pratique sont validés par FrancoRoute dans /gestion ; l’achat de l’application ne donne pas d’heures de conduite. Aucun rappel, SMS ou courriel d’annulation n’est envoyé automatiquement ; consultez `/gestion` avant chaque appel.
 
 ## Références des services
 

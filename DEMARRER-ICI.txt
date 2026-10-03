@@ -1,0 +1,77 @@
+FRANCOROUTE — ACTIVER DEPUIS GITHUB
+
+Le code est dans la proposition :
+https://github.com/nellyfolefack6-afk/Francoroute/pull/1
+Branche : codex/outlook-pratique
+
+1. METTRE LE CODE EN LIGNE
+Dans la proposition GitHub, vérifier les fichiers puis utiliser « Merge pull
+request ». Netlify lancera le déploiement si la branche main de ce dépôt est
+toujours reliée au projet FrancoRoute. Le dépôt contient déjà netlify.toml.
+Il n’est pas nécessaire de déposer un ZIP ou de copier les fichiers un par un.
+L’ajout du code ne donne pas à lui seul accès à Outlook ou aux paiements.
+
+2. FAIRE UNE FOIS LA CONFIGURATION DES COMPTES
+Dans votre projet Netlify, ouvrir Environment variables. Les noms exacts et
+les valeurs publiques sont dans .env.example. Compléter avec vos propres clés
+privées dans Netlify, jamais dans GitHub ni dans une conversation.
+
+Pour les comptes clients et leurs heures :
+- SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, DATABASE_URL ;
+- DATABASE_CA_CERT si le certificat de votre connexion l’exige ;
+- SITE_ORIGIN=https://francoroute.com ;
+- ADMIN_EMAILS=nellyfolefack6@gmail.com.
+La préparation des tables sera automatique au déploiement, sans SQL à copier.
+DATABASE_URL et DATABASE_CA_CERT doivent être disponibles pour Builds ET
+Functions dans le contexte Production. Réserver les clés de production à ce
+contexte ; ne pas les donner aux Deploy Previews ou aux autres branches.
+Dans Supabase, configurer également le SMTP et le modèle de code courriel
+supabase/email-code.html, afin que vos clients puissent se connecter.
+
+Pour Outlook :
+- créer l’application Microsoft de FrancoRoute comme expliqué dans
+  ACTIVER-OUTLOOK.txt (compte personnel pris en charge) ;
+- ajouter OUTLOOK_CLIENT_ID, OUTLOOK_CLIENT_SECRET et OUTLOOK_TOKEN_KEY ;
+- OUTLOOK_ACCOUNT_EMAIL=francoroute@outlook.com.
+L’adresse de retour Microsoft est exactement :
+https://francoroute.com/api/outlook/callback
+Le compte ChatGPT déjà connecté ne remplace pas cette application Microsoft.
+
+Pour les courriels de premiers appels :
+- RESEND_API_KEY et BOOKING_MAIL_FROM sur un domaine vérifié ;
+- BOOKING_NOTIFY_EMAIL=francoroute@outlook.com.
+
+Pour vendre l’accès à l’application à 28 CAD + taxes pendant 21 jours :
+- STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PAYMENT_TAX_MODE=exclusive ;
+- configurer Stripe Tax et le webhook /api/stripe-webhook.
+Les services et comptes doivent exister ; le code ne crée pas les comptes ni
+les autorisations, ne choisit pas les engagements commerciaux à votre place.
+Les détails se trouvent dans INSTALLATION-NETLIFY.txt et ACTIVER-OUTLOOK.txt.
+
+3. RELIER OUTLOOK AU SITE
+Après avoir enregistré les variables, relancer le déploiement de production.
+Ouvrir https://francoroute.com/gestion et se connecter avec le courriel admin.
+Cliquer « Connecter francoroute@outlook.com », puis autoriser Microsoft.
+Vérifier le compte et le calendrier affichés, puis un rendez-vous de contrôle.
+Cette autorisation ne peut pas être remplacée par du code dans GitHub.
+
+ENSUITE, AU QUOTIDIEN
+FrancoRoute enregistre dans /gestion les heures déjà payées par chaque client,
+avec la référence de paiement et les prérequis BDE si applicables. Le client
+peut ensuite choisir ses cours sur francoroute.com/pratique. Un achat de
+l’application seul ne donne pas d’heures de conduite.
+
+Le site gère le solde, les disponibilités Outlook, les réservations de 60 ou
+90 minutes et les annulations depuis le site. Les cours se terminent au plus
+tard à 20 h, heure de l’Est, du lundi au dimanche. L’ouverture initiale est 9 h.
+Les premiers appels restent des créneaux de 15 minutes ouverts dans /gestion.
+
+Les rendez-vous pris sur le site doivent être annulés depuis le site pour
+restituer les heures. En cas de réponse Microsoft incertaine, le créneau reste
+bloqué et le bouton « Synchroniser » permet de reprendre la confirmation.
+Il n’y a pas de rappels automatiques ni d’invitations Outlook aux clients.
+
+ÉTAT DE CETTE LIVRAISON
+Le code a été vérifié localement avec des services simulés. La connexion réelle
+de production, la réception des courriels et un paiement réel restent à valider
+après la configuration de vos comptes. Aucune connexion active n’est présumée.
