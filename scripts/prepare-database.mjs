@@ -41,7 +41,6 @@ export async function runMigrations(client, entries, log = console.log) {
   try {
     await client.query("SET LOCAL lock_timeout = '15s'");
     await client.query("SET LOCAL statement_timeout = '30s'");
-    // Transaction lock also works through the Supabase transaction pooler.
     await client.query('SELECT pg_advisory_xact_lock(74032602)');
     await client.query(`CREATE TABLE IF NOT EXISTS public.francoroute_migrations (
       name text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now()
@@ -58,7 +57,7 @@ export async function runMigrations(client, entries, log = console.log) {
       await client.query('INSERT INTO public.francoroute_migrations(name,checksum) VALUES($1,$2)', [entry.name, entry.checksum]);
     }
     await client.query('COMMIT');
-    log('FrancoRoute : tables de réservation et Outlook prêtes ; données existantes conservées.');
+    log('FrancoRoute : tables de reservation et Outlook pretes ; donnees existantes conservees.');
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
     throw error;
@@ -69,8 +68,8 @@ export async function prepareDatabase(env = process.env, args = process.argv.sli
   const mode = preparationMode(env, args);
   if (mode !== 'apply') {
     log(mode === 'unconfigured'
-      ? 'FrancoRoute : DATABASE_URL à renseigner dans Netlify (production, Builds et Functions), puis redéployer. Réservations non activées.'
-      : 'FrancoRoute : préparation de la base ignorée hors déploiement de production.');
+      ? 'FrancoRoute : DATABASE_URL a renseigner dans Netlify (production, Builds et Functions), puis redeployer. Reservations non activees.'
+      : 'FrancoRoute : preparation de la base ignoree hors deploiement de production.');
     return mode;
   }
   const {Client} = await import('pg');
@@ -85,11 +84,10 @@ export async function prepareDatabase(env = process.env, args = process.argv.sli
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try { await prepareDatabase(); }
   catch (error) {
-    console.error('DEBUG INFO:', error?.code, '|', error?.message);
-    // Never print connection strings, provider errors, certificates or passwords.
+    console.error("DEBUG INFO:", error?.code, "|", error?.message);
     console.error(error?.message === 'MIGRATION_CHANGED'
-      ? 'FrancoRoute : une migration déjà appliquée a été modifiée. Restaurer le fichier d'origine et ajouter une nouvelle migration.'
-      : 'FrancoRoute : préparation de la base impossible. Vérifier DATABASE_URL, DATABASE_CA_CERT et les droits du compte dans Netlify. Publication interrompue.');
+      ? "FrancoRoute : une migration deja appliquee a ete modifiee. Restaurer le fichier d'origine et ajouter une nouvelle migration."
+      : 'FrancoRoute : preparation de la base impossible. Verifier DATABASE_URL, DATABASE_CA_CERT et les droits du compte dans Netlify. Publication interrompue.');
     process.exitCode = 1;
   }
 }
