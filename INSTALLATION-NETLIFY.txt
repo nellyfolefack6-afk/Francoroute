@@ -1,0 +1,179 @@
+FRANCOROUTE — INSTALLATION SUR NETLIFY À PARTIR DE GIT
+
+Le site conserve francoroute.com. L’application couvre le G1, le G2 et le G Full.
+Offre : 20 $ CA, paiement unique, accès de 3 semaines (21 jours).
+
+Ce projet inclut le site, le serveur et les branchements nécessaires. Pour recevoir
+les codes de connexion, les notifications de rendez-vous et les paiements réels,
+il faut renseigner vos comptes de services. Aucune clé privée n’est incluse.
+
+1. PRÉPARER LE DÉPÔT GIT
+
+Décompressez le ZIP. Copiez les fichiers et dossiers qu’il contient à la racine
+DU dépôt prévu pour ce site. Gardez une sauvegarde de votre ancien dépôt.
+
+Le fichier package.json et netlify.toml doivent être à la racine. Conservez aussi
+les fichiers commençant par un point, notamment .env.example et .gitignore.
+
+Si vous remplacez l’ancienne version Cloudflare/Sites, retirez de ce dépôt ses
+anciens vite.config.*, wrangler.*, cloudflare-env.d.ts, drizzle.config.*, raw.d.ts,
+répertoires drizzle, examples, preview, .openai et scripts de déploiement Sites.
+Le présent ZIP est autonome. N’y ajoutez pas l’ancien HTML de démonstration.
+
+Ne publiez jamais .env.local, les clés secrètes, node_modules ou .next dans Git.
+Ne faites pas un simple glisser-déposer du ZIP sur Netlify : ce projet doit être
+construit depuis Git pour exécuter ses fonctions serveur.
+
+2. CRÉER LE PROJET SUPABASE
+
+Créez un projet Supabase neuf et gardez son mot de passe de base de données.
+Dans le SQL Editor, collez puis exécutez supabase/schema.sql.
+Cela crée les tables ; aucun compte, achat ou rendez-vous fictif n’est ajouté.
+
+Relevez :
+- SUPABASE_URL : l’URL de votre projet.
+- SUPABASE_PUBLISHABLE_KEY : sa clé API publishable (ou l’ancienne clé anon).
+  N’utilisez pas une clé secrète ou service_role pour cette variable.
+- DATABASE_URL : dans Connect, choisissez Transaction pooler et copiez la chaîne
+  complète. Remplacez le mot de passe par le vôtre. Encodez les caractères spéciaux
+  du mot de passe dans l’URL. Gardez le nom d’utilisateur et l’hôte fournis.
+
+La connexion vérifie le certificat TLS. Si votre connexion requiert la racine
+Supabase, téléchargez son certificat dans les réglages de la base, puis mettez le
+contenu PEM complet dans DATABASE_CA_CERT sur Netlify. Ne désactivez pas la
+vérification du certificat pour résoudre une erreur.
+
+Dans Authentication, activez le fournisseur Email et autorisez la création des
+nouveaux comptes. Le site crée le compte à la première connexion par code.
+Définissez la Site URL : https://francoroute.com
+
+IMPORTANT — CODE DE CONNEXION : dans le modèle courriel « Magic Link », remplacez
+le lien par le code. Un modèle prêt à coller figure dans
+supabase/email-code.html. Il utilise {{ .Token }}.
+Le visiteur saisit ce code directement sur /connexion. Aucun mot de passe.
+Conservez une durée d’expiration courte adaptée dans les paramètres Email OTP.
+
+Pour envoyer aux clients en production, configurez un SMTP personnalisé dans
+Supabase Authentication. Le service de courriel par défaut de Supabase ne suffit
+pas pour ouvrir la connexion à tous vos clients. Vous pouvez utiliser Resend SMTP
+avec les paramètres fournis dans votre tableau de bord Resend et un expéditeur
+sur votre domaine vérifié. Cette configuration SMTP est distincte des variables
+Resend de notification ci-dessous.
+
+3. CONFIGURER LES COURRIELS DE RENDEZ-VOUS AVEC RESEND
+
+Dans Resend, vérifiez un domaine ou sous-domaine que vous contrôlez, par exemple
+notifications.francoroute.com, en ajoutant les enregistrements DNS demandés.
+Préservez les enregistrements existants nécessaires à votre messagerie.
+
+Créez une clé API d’envoi, puis relevez :
+- RESEND_API_KEY : votre clé privée Resend.
+- BOOKING_MAIL_FROM : un expéditeur autorisé sur ce domaine vérifié, par exemple
+  FrancoRoute <rendezvous@notifications.francoroute.com>.
+- BOOKING_NOTIFY_EMAIL : francoroute@outlook.com
+
+L’adresse Outlook est le DESTINATAIRE, pas l’expéditeur vérifié Resend.
+
+Quand un visiteur réserve, le courriel vous donne la date, le nom et le numéro
+à appeler. Vous téléphonez au client à l’heure de l’appel de 15 minutes.
+Le client reçoit sa confirmation à l’écran et peut ajouter le rendez-vous à son
+calendrier. Le site n’envoie pas de courriel de confirmation au client.
+
+La réservation reste enregistrée si le courriel échoue. Dans /gestion, regardez
+la colonne de notification et utilisez le bouton pour retenter l’envoi.
+Consultez toujours /gestion avant d’appeler : les annulations y sont visibles.
+
+4. CONFIGURER STRIPE
+
+Dans votre compte Stripe, relevez STRIPE_SECRET_KEY.
+Ajoutez un endpoint webhook :
+https://francoroute.com/api/stripe-webhook
+
+Activez ces événements :
+- checkout.session.completed
+- checkout.session.async_payment_succeeded
+- charge.refunded
+
+Copiez le secret de signature de cet endpoint dans STRIPE_WEBHOOK_SECRET.
+Aucun produit à créer manuellement : le serveur crée la ligne 20 CAD / 21 jours
+lors de l’ouverture de Stripe Checkout.
+
+Choisissez PAYMENT_TAX_MODE selon votre situation :
+- inclusive : les 20 $ incluent les taxes ; Stripe Tax doit être configuré.
+- exclusive : taxes applicables ajoutées ; Stripe Tax doit être configuré.
+- none : aucune taxe collectée par ce paiement.
+
+Ce choix est laissé vide pour que vous le régliez selon vos obligations.
+Ne sélectionnez pas « none » uniquement pour activer le bouton de paiement.
+Utilisez d’abord les identifiants Stripe de test pour votre vérification interne,
+puis les clés et le webhook de production avant d’accepter des clients.
+Le site public ne contient pas de mode de démonstration ni d’accès gratuit caché.
+
+5. CONNECTER GIT À NETLIFY
+
+Importez votre dépôt Git dans Netlify, ou mettez à jour votre projet Netlify
+existant si c’est celui que vous souhaitez garder.
+
+Réglages :
+- Base directory : vide si package.json est à la racine.
+- Build command : npm run build
+- Publish directory : .next
+- Node.js : 22 (déjà déclaré dans netlify.toml).
+
+Netlify installe automatiquement l’adaptateur Next.js. Ne choisissez pas une
+publication du dossier public, une exportation statique, ni une règle universelle
+redirigeant toutes les pages vers index.html.
+
+Dans Environment variables, ajoutez les valeurs listées dans .env.example.
+Rendez-les accessibles aux fonctions serveur ; gardez les clés privées secrètes.
+SITE_ORIGIN doit être https://francoroute.com, sans barre oblique finale.
+ADMIN_EMAILS est prérempli avec nellyfolefack6@gmail.com. Modifiez-le si vous
+préférez une autre adresse de gestion. Plusieurs adresses peuvent être séparées
+par une virgule. Chacune doit se connecter et vérifier son courriel.
+
+Les changements de variables nécessitent un nouveau déploiement.
+Utilisez un jeu de comptes et de clés distinct pour un éventuel site de staging.
+
+6. GARDER FRANCOROUTE.COM
+
+Dans Netlify, ajoutez francoroute.com comme domaine principal et suivez les
+instructions DNS affichées pour VOTRE site. Activez HTTPS et la redirection
+www vers votre domaine principal. Ne changez pas d’adresse vers un domaine .ca.
+
+Si francoroute.com est déjà relié à ce projet Netlify, gardez cette liaison.
+Si vous vérifiez d’abord sur une URL .netlify.app, configurez SITE_ORIGIN et le
+webhook pour cette URL de vérification, puis remettez-les sur francoroute.com
+au moment de la mise en ligne définitive.
+
+7. OUVRIR L’AGENDA ET VÉRIFIER LES BRANCHEMENTS
+
+- Ouvrez https://francoroute.com/gestion.
+- Connectez-vous avec le courriel inscrit dans ADMIN_EMAILS, puis le code reçu.
+- Ajoutez vos créneaux de 15 minutes. Les horaires sont ceux de Toronto.
+  Les clients ne voient que les créneaux ouverts, avec au moins 2 heures de préavis.
+- Effectuez une réservation de contrôle avec vos propres coordonnées.
+  Vérifiez le rendez-vous dans /gestion et le courriel dans votre boîte Outlook.
+  Annulez cette réservation avec son lien avant d’ouvrir au public.
+- Vérifiez la connexion, le paiement Stripe de test et l’ouverture de l’application
+  dans un compte client distinct. Le compte de gestion a un accès administrateur
+  et ne sert donc pas à vérifier la restriction payante.
+- Remettez les clés Stripe de production puis redéployez. Vérifiez le webhook.
+
+Après validation de cette nouvelle version, retirez ou protégez l’ancienne
+application francoroute-prepa.netlify.app si elle permet encore un accès public
+au contenu. Le présent ZIP ne modifie pas cet autre projet Netlify.
+
+Ces dernières vérifications nécessitent vos comptes réels et n’ont pas été
+réalisées lors de la préparation du ZIP. Les tests locaux utilisent PostgreSQL
+et simulent les réponses des services externes, sans envoyer de messages ni payer.
+
+À RETENIR
+
+Vous recevrez les notifications de réservation après la configuration Resend.
+Le ZIP seul ne connecte pas votre boîte mail ni votre compte bancaire.
+Le calendrier est intégré au site. Il n’est pas synchronisé automatiquement avec
+Google Calendar ou Outlook et n’envoie pas de rappels automatiques.
+
+Pour suivre le site : /gestion.
+Pour les clients et la préparation : /espace.
+Pour réserver un premier appel : /reserver.
