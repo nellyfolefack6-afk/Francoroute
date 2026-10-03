@@ -8,3 +8,7 @@
 
 [functions]
   included_files = ["private/application.html"]
+
+# Force the Next.js adapter for this former static Netlify project.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
