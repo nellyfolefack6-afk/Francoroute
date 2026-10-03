@@ -1,5 +1,2 @@
-import {notFound} from 'next/navigation';
 import Website from '@/components/website';
-const pages=['programme-bde','valeurs','application','reserver','contact','confidentialite','conditions','annuler'];
-export async function generateMetadata({params}:{params:Promise<{slug:string}>}){const {slug}=await params;return {title:({'programme-bde':'Programme BDE',valeurs:'Nos valeurs',application:'Je prépare / révise mon G1',reserver:'Réserver un premier appel',contact:'Nous contacter',confidentialite:'Confidentialité',conditions:'Conditions de l’accès',annuler:'Annuler un rendez-vous'} as Record<string,string>)[slug]+' · FrancoRoute'}}
-export default async function Page({params}:{params:Promise<{slug:string}>}){const {slug}=await params;if(!pages.includes(slug))notFound();return <Website page={slug}/>}
+export default function Home(){return <Website page="accueil"/>}

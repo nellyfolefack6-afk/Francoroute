@@ -12,6 +12,21 @@ il faut renseigner vos comptes de services. Aucune clé privée n’est incluse.
 Décompressez le ZIP. Copiez les fichiers et dossiers qu’il contient à la racine
 DU dépôt prévu pour ce site. Gardez une sauvegarde de votre ancien dépôt.
 
+POUR AJOUTER AVEC LE NAVIGATEUR GITHUB :
+- Dans Windows, faites clic droit sur le ZIP, puis « Extraire tout ».
+- Ouvrez le dossier extrait jusqu’à voir package.json ET le dossier app.
+- Dans GitHub, ouvrez la page principale de votre dépôt, puis Add file > Upload files.
+- Glissez ENSEMBLE les dossiers et les fichiers depuis l’Explorateur Windows.
+  Le bouton « choose your files » peut vous faire sélectionner seulement les fichiers.
+- Vérifiez que la liste contient app/page.tsx et app/layout.tsx avant de valider
+  Commit changes sur la branche utilisée par Netlify.
+- N’envoyez pas le ZIP lui-même ni son dossier parent : app doit être directement
+  à côté de package.json dans GitHub.
+
+Si Netlify affiche « Couldn't find any pages or app directory », le dossier app
+n’est pas arrivé à la racine du dépôt construit. Reprenez l’ajout de TOUS les dossiers.
+Cette archive a été allégée pour rester sous les 100 fichiers par envoi GitHub.
+
 Le fichier package.json et netlify.toml doivent être à la racine. Conservez aussi
 les fichiers commençant par un point, notamment .env.example et .gitignore.
 

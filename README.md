@@ -4,7 +4,7 @@ Version blanche et bleue pour **francoroute.com**. Le site comprend le programme
 
 ## Commencer
 
-1. Décompressez l’archive. Placez **son contenu** dans la racine de votre dépôt Git : `package.json`, `netlify.toml`, `app`, etc. Ne déposez pas simplement le ZIP dans Git ou Netlify Drop.
+1. Décompressez l’archive. Placez **son contenu** dans la racine de votre dépôt Git : `package.json`, `netlify.toml`, `app`, etc. Sur GitHub, utilisez **Add file → Upload files**, puis glissez **les dossiers ET les fichiers** depuis le dossier extrait. Vérifiez que `app/page.tsx` apparaît dans la liste avant de cliquer sur **Commit changes**. Ne déposez pas simplement le ZIP dans Git ou Netlify Drop.
 2. Suivez **INSTALLATION-NETLIFY.txt** pour connecter Supabase, Resend et Stripe, puis votre dépôt à Netlify.
 3. Après le déploiement, ouvrez `/gestion`, connectez-vous avec votre adresse administratrice et ajoutez vos disponibilités.
 
