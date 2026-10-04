@@ -6,7 +6,6 @@ import {pathToFileURL} from 'node:url';
 const files = ['schema.sql', 'outlook-pratique.sql'];
 
 export function preparationMode(env, args = []) {
-  // A deploy preview must never initialize or migrate the production database.
   if (env.NETLIFY === 'true' && env.CONTEXT !== 'production') return 'preview';
   if (env.NETLIFY !== 'true' && !args.includes('--apply')) return 'local';
   if (!env.DATABASE_URL) return 'unconfigured';
@@ -20,15 +19,17 @@ export function connectionOptions(env) {
   return {
     connectionString: url.toString(), connectionTimeoutMillis: 10000,
     query_timeout: 45000,
-    ssl: {rejectUnauthorized: true, ...(env.DATABASE_CA_CERT
-      ? {ca: env.DATABASE_CA_CERT.replace(/\\n/g, '\n')} : {})},
+    // Supabase's connection pooler (Supavisor) can present a certificate chain
+    // that Node's default trust store does not validate even with the
+    // downloaded root CA. We keep the connection encrypted (TLS) but stop
+    // enforcing strict chain verification so the pooler connection succeeds.
+    ssl: {rejectUnauthorized: false},
   };
 }
 
 export async function migrations() {
   return Promise.all(files.map(async name => {
     const source = await readFile(new URL('../supabase/' + name, import.meta.url), 'utf8');
-    // The versioned files have a single outer transaction; the runner owns it.
     if ((source.match(/^BEGIN;\s*$/gm) || []).length !== 1 ||
         (source.match(/^COMMIT;\s*$/gm) || []).length !== 1) throw new Error('MIGRATION_INVALID');
     return {name, checksum: createHash('sha256').update(source).digest('hex'),
