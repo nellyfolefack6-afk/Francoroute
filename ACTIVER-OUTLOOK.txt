@@ -27,8 +27,9 @@ SQL à copier. La préparation est répétable ; aucun client n'est supprimé.
 Les aperçus GitHub ne lancent jamais de migration. Sans DATABASE_URL, le site
 peut être publié mais les réservations restent indisponibles. Une erreur de
 migration interrompt le nouveau déploiement au lieu de publier une base incomplète.
-DATABASE_URL et DATABASE_CA_CERT doivent être disponibles pour Builds et Functions
-en Production. Les autres secrets du site servent aux Functions. Ne pas partager
+DATABASE_URL doit être disponible pour Builds et Functions en Production.
+Le certificat Supabase est intégré au projet ; DATABASE_CA_CERT n’est plus utilisé
+pour les adresses officielles de connexion Supabase. Les autres secrets du site servent aux Functions. Ne pas partager
 les secrets de production avec les aperçus de branches.
 Configurer la connexion par code email, le modèle supabase/email-code.html et
 un fournisseur SMTP adapté à la production ; le service de test Supabase ne
