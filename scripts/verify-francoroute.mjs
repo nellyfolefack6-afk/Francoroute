@@ -50,6 +50,22 @@ assert.equal((await call('auth-verify',{email:'person@example.test',code:'999999
 assert.equal((await call('auth-verify',{email:'person@example.test',code:'123456'})).status,200);
 assert.equal(globalThis.testCookies.length,1);
 assert.equal((await call('auth-code',{email:'person@example.test'},'POST','https://evil.example.test')).status,403);
+// Netlify may use an internal URL, while the browser sends our public origin.
+async function proxyAuth(origin, extra={}){
+ const r=new Request('http://localhost:3000/api/auth-code',{method:'POST',headers:{'content-type':'application/json',...(origin?{origin}:{}),...extra},body:JSON.stringify({email:'invalid'})});
+ return (await api.POST(r,{params:Promise.resolve({action:'auth-code'})})).status;
+}
+assert.equal(await proxyAuth('https://site.example.test'),400,'Allowed public origin reaches input validation behind the proxy');
+for(const origin of ['https://evil.example.test','https://site.example.test.evil.test','http://site.example.test','null',undefined]){
+ assert.equal(await proxyAuth(origin,{host:'site.example.test','x-forwarded-host':'site.example.test','x-forwarded-proto':'https'}),403,'Untrusted origin stays blocked even with spoofed headers');
+}
+process.env.SITE_ORIGIN='https://site.example.test/';
+assert.equal(await proxyAuth('https://site.example.test'),400);
+process.env.SITE_ORIGIN='https://site.example.test';
+Object.assign(process.env,{NETLIFY:'true',CONTEXT:'deploy-preview',DEPLOY_PRIME_URL:'https://deploy-preview-3--example.netlify.app'});
+assert.equal(await proxyAuth('https://deploy-preview-3--example.netlify.app'),400);
+assert.equal(await proxyAuth('https://site.example.test'),403);
+delete process.env.NETLIFY;delete process.env.CONTEXT;delete process.env.DEPLOY_PRIME_URL;
 assert.equal((await call('auth-signout',{})).status,200);
 globalThis.testUser=owner;
 const start=Math.ceil((Date.now()/1000+90000)/900)*900;

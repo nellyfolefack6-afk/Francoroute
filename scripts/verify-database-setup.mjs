@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import {PGlite} from '@electric-sql/pglite';
+import {rootCertificates, createSecureContext} from 'node:tls';
+import {databaseConnectionOptions, databaseFailure} from '../lib/database-config.mjs';
 import {preparationMode, connectionOptions, migrations, runMigrations} from './prepare-database.mjs';
 
 const db = new PGlite();
@@ -30,9 +32,20 @@ try {
   assert.equal(preparationMode({DATABASE_URL: 'present'}), 'local');
   assert.equal(preparationMode({DATABASE_URL: 'present'}, ['--apply']), 'apply');
   assert.equal(preparationMode({NETLIFY: 'true', CONTEXT: 'production', DATABASE_URL: 'present'}), 'apply');
-  const options = connectionOptions({DATABASE_URL: 'postgresql://example.invalid/database?sslmode=no-verify', DATABASE_CA_CERT: 'A\\nB'});
+  const certificate = rootCertificates[0];
+  const databaseEnv = {DATABASE_URL: 'postgresql://example.invalid/database?sslmode=no-verify&ssl=false', DATABASE_CA_CERT: certificate.replace(/\n/g, '\\n')};
+  const options = connectionOptions(databaseEnv);
   assert.equal(options.ssl.rejectUnauthorized, true);
-  assert.equal(options.ssl.ca, 'A\nB');
+  assert.ok(options.ssl.ca.includes(certificate.trim()));
+  assert.ok(options.ssl.ca.includes(rootCertificates[1]), 'Custom CA must preserve public trust roots');
+  assert.deepEqual(options.ssl, databaseConnectionOptions(databaseEnv).ssl, 'Build and runtime use the same verified TLS');
+  assert.doesNotThrow(() => createSecureContext(options.ssl));
+  assert.equal(databaseConnectionOptions({DATABASE_URL: databaseEnv.DATABASE_URL}).ssl.rejectUnauthorized, true);
+  assert.throws(() => databaseConnectionOptions({...databaseEnv, DATABASE_CA_CERT: 'truncated'}), /DATABASE_CA_CERT_INVALID/);
+  assert.throws(() => databaseConnectionOptions({DATABASE_URL: 'postgresql://postgres:[YOUR-PASSWORD]@example.invalid/postgres'}), /DATABASE_URL_INVALID/);
+  assert.equal(databaseFailure({code:'28P01',message:'PRIVATE_PASSWORD'}).includes('PRIVATE_PASSWORD'), false);
+  assert.equal(databaseFailure({code:'UNRECOGNIZED',message:'PRIVATE_PASSWORD'}).includes('PRIVATE_PASSWORD'), false);
   assert.equal(new URL(options.connectionString).searchParams.has('sslmode'), false);
+  assert.equal(new URL(options.connectionString).searchParams.has('ssl'), false);
   console.log('Préparation de la base : répétition, conservation, rollback, confidentialité et exclusion des aperçus vérifiés.');
 } finally { await db.close(); }
