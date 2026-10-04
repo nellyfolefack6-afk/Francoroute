@@ -1,7 +1,7 @@
 import {authClient,authReady} from '@/lib/supabase/server';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
-import {bookingMailReady,notificationRecipient,notifyBooking} from '@/lib/booking-mail';
+import {bookingMailReady,notificationRecipient,notifyBooking,sendContactMessage} from '@/lib/booking-mail';
 import {api,json,body,sameOrigin,fail,now,hash,rate,admin,user,paid,adminEmail,entitlement,paymentReady,cfg,stripe,fulfill} from '@/lib/server';
 import {getFrancoRouteUser} from '@/lib/identity';
 import {db} from '@/db';
@@ -40,6 +40,16 @@ export async function POST(r:Request,c:Ctx){return api(async()=>{
   const {data,error}=await client.auth.verifyOtp({email,token,type:'email'});
   if(error||!data.user?.email_confirmed_at)fail('Ce code est incorrect ou expiré. Demandez un nouveau code.',400);
   return json({signedIn:true});
+ }
+
+ if(action==='contact'){
+  const name=String(b.name||'').trim(),email=String(b.email||'').trim().toLowerCase(),phone=String(b.phone||'').trim(),goal=String(b.goal||'').trim(),message=String(b.message||'').trim();
+  if(name.length<2||name.length>100||email.length>254||!/^\S+@\S+\.\S+$/.test(email)||phone.length>25||!/^[+()\d\s.-]{7,25}$/.test(phone)||message.length<5||message.length>2500)fail('Vérifiez vos coordonnées et votre message.');
+  await rate('contact-ip:'+await hash(r.headers.get('x-nf-client-connection-ip')||email),10,3600);
+  await rate('contact-email:'+await hash(email),5,86400);
+  const sent=await sendContactMessage({name,email,phone,goal,message});
+  if(!sent)fail('L’envoi est momentanément indisponible. Contactez-nous par téléphone ou courriel.',503);
+  return json({sent:true});
  }
 
  if(action==='bookings'){
