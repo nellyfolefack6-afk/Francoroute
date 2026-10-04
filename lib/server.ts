@@ -1,12 +1,22 @@
 import 'server-only';
 import {getFrancoRouteUser} from '@/lib/identity';
 import {db} from '@/db';
+import {databaseFailure} from '@/lib/database-config.mjs';
 export const now=()=>Math.floor(Date.now()/1000);
 export const cfg=()=>process.env as Record<string,string>;
 export function fail(message:string,status=400):never{throw Object.assign(new Error(message),{status});}
 export const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
-export async function api(fn:()=>Promise<Response>){try{return await fn()}catch(e){const x=e as Error&{status?:number};if(!x.status)console.error('FrancoRoute service failure',x.message);return json({error:x.status?x.message:'Le service est momentanément indisponible. Réessayez dans quelques instants.'},x.status||503)}}
-export function sameOrigin(r:Request){if(r.headers.get('origin')!==new URL(r.url).origin)fail('Requête non autorisée.',403)}
+export async function api(fn:()=>Promise<Response>){try{return await fn()}catch(e){const x=e as Error&{status?:number};if(!x.status)console.error('FrancoRoute service failure:',databaseFailure(x));return json({error:x.status?x.message:'Le service est momentanément indisponible. Réessayez dans quelques instants.'},x.status||503)}}
+export function sameOrigin(r:Request){
+ // Netlify can supply an internal request URL. Only trust our configured
+ // public origin; never derive permission from forwarded or Host headers.
+ const c=cfg();
+ const preview=c.NETLIFY==='true'&&!!c.CONTEXT&&c.CONTEXT!=='production';
+ const target=(preview?c.DEPLOY_PRIME_URL:undefined)||c.SITE_ORIGIN||r.url;
+ let expected:string;
+ try{expected=new URL(target).origin}catch{fail('Le site doit être configuré par FrancoRoute.',503)}
+ if(r.headers.get('origin')!==expected)fail('Requête non autorisée.',403);
+}
 export async function body(r:Request){if(Number(r.headers.get('content-length')||0)>150000)fail('Formulaire trop volumineux.',413);const raw=await r.text();if(raw.length>150000)fail('Formulaire trop volumineux.',413);try{return JSON.parse(raw)}catch{fail('Formulaire invalide.')}}
 export async function user(){const u=await getFrancoRouteUser();if(!u)fail('Connectez-vous pour continuer.',401);return u}
 export const adminEmail=(email:string)=>(cfg().ADMIN_EMAILS||'').toLowerCase().split(',').map(x=>x.trim()).includes(email.toLowerCase());

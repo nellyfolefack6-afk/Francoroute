@@ -1,20 +1,15 @@
 import 'server-only';
 import {Pool, types, type PoolClient} from 'pg';
+import {databaseConnectionOptions} from '@/lib/database-config.mjs';
 
 // Epoch seconds and aggregate counts fit safely in a JavaScript number.
 types.setTypeParser(20, Number);
 const state = globalThis as unknown as {francoRoutePool?: Pool};
 function pool() {
   if (state.francoRoutePool) return state.francoRoutePool;
-  if (!process.env.DATABASE_URL) throw new Error('Database unavailable');
-  const url = new URL(process.env.DATABASE_URL);
-  // Keep TLS verification enabled; URL SSL parameters must not override it.
-  for (const key of ['sslmode', 'sslcert', 'sslkey', 'sslrootcert']) url.searchParams.delete(key);
   state.francoRoutePool = new Pool({
-    connectionString: url.toString(), max: 1, idleTimeoutMillis: 10000,
+    ...databaseConnectionOptions(), max: 1, idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 7000, query_timeout: 15000,
-    ssl: {rejectUnauthorized: true, ...(process.env.DATABASE_CA_CERT
-      ? {ca: process.env.DATABASE_CA_CERT.replace(/\\n/g, '\n')} : {})},
   });
   state.francoRoutePool.on('error', () => console.error('Database connection interrupted'));
   return state.francoRoutePool;
