@@ -18,12 +18,12 @@ privées dans Netlify, jamais dans GitHub ni dans une conversation.
 
 Pour les comptes clients et leurs heures :
 - SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, DATABASE_URL ;
-- DATABASE_CA_CERT si le certificat de votre connexion l’exige ;
+- pour Supabase, le certificat public est intégré au projet : aucune valeur DATABASE_CA_CERT à copier ;
 - SITE_ORIGIN=https://francoroute.com ;
 - ADMIN_EMAILS=nellyfolefack6@gmail.com.
 La préparation des tables sera automatique au déploiement, sans SQL à copier.
-DATABASE_URL et DATABASE_CA_CERT doivent être disponibles pour Builds ET
-Functions dans le contexte Production. Réserver les clés de production à ce
+DATABASE_URL doit être disponible pour Builds ET Functions dans le contexte
+Production. DATABASE_CA_CERT n’est plus utilisé pour les connexions Supabase. Réserver les clés de production à ce
 contexte ; ne pas les donner aux Deploy Previews ou aux autres branches.
 Dans Supabase, configurer également le SMTP et le modèle de code courriel
 supabase/email-code.html, afin que vos clients puissent se connecter.

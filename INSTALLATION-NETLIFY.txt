@@ -58,10 +58,12 @@ Relevez :
   complète. Remplacez le mot de passe par le vôtre. Encodez les caractères spéciaux
   du mot de passe dans l’URL. Gardez le nom d’utilisateur et l’hôte fournis.
 
-La connexion vérifie le certificat TLS. Si votre connexion requiert la racine
-Supabase, téléchargez son certificat dans les réglages de la base, puis mettez le
-contenu PEM complet dans DATABASE_CA_CERT sur Netlify. Ne désactivez pas la
-vérification du certificat pour résoudre une erreur.
+La connexion vérifie le certificat TLS. Le certificat public Supabase est inclus
+dans lib/supabase-ca.mjs et chargé au déploiement comme dans les fonctions Netlify.
+Pour les adresses officielles du pooler Supabase ou db.<projet>.supabase.co,
+DATABASE_CA_CERT n’est plus utilisé : aucune copie de certificat n’est nécessaire.
+La variable reste facultative pour un autre fournisseur de base de données.
+Ne désactivez pas la vérification du certificat pour résoudre une erreur.
 
 Dans Authentication, activez le fournisseur Email et autorisez la création des
 nouveaux comptes. Le site crée le compte à la première connexion par code.
@@ -144,8 +146,8 @@ redirigeant toutes les pages vers index.html.
 
 Dans Environment variables, ajoutez les valeurs listées dans .env.example.
 Rendez-les accessibles aux fonctions serveur ; gardez les clés privées secrètes.
-DATABASE_URL et, si nécessaire, DATABASE_CA_CERT doivent également être disponibles
-pour Builds en contexte Production. Ne fournissez pas les secrets de production
+DATABASE_URL doit également être disponible pour Builds en contexte Production.
+Pour Supabase, DATABASE_CA_CERT n’est pas nécessaire. Ne fournissez pas les secrets de production
 aux Deploy Previews ou aux Branch deploys.
 SITE_ORIGIN doit être https://francoroute.com, sans barre oblique finale.
 ADMIN_EMAILS est prérempli avec nellyfolefack6@gmail.com. Modifiez-le si vous

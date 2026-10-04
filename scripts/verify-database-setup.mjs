@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {PGlite} from '@electric-sql/pglite';
 import {rootCertificates, createSecureContext} from 'node:tls';
+import {X509Certificate} from 'node:crypto';
+import {SUPABASE_CA_CERT} from '../lib/supabase-ca.mjs';
 import {databaseConnectionOptions, databaseFailure} from '../lib/database-config.mjs';
 import {preparationMode, connectionOptions, migrations, runMigrations} from './prepare-database.mjs';
 
@@ -42,6 +44,19 @@ try {
   assert.doesNotThrow(() => createSecureContext(options.ssl));
   assert.equal(databaseConnectionOptions({DATABASE_URL: databaseEnv.DATABASE_URL}).ssl.rejectUnauthorized, true);
   assert.throws(() => databaseConnectionOptions({...databaseEnv, DATABASE_CA_CERT: 'truncated'}), /DATABASE_CA_CERT_INVALID/);
+  assert.equal(new X509Certificate(SUPABASE_CA_CERT).fingerprint256.replace(/:/g,''), '807025AD50D4ED219D2C9C7D299C004F824EB00CF7F65AFEF607D07B72E6CAFA');
+  for (const host of ['aws-0-ca-central-1.pooler.supabase.com', 'db.exampleproject.supabase.co']) {
+    for (const oldValue of [undefined, '', 'truncated', '"-----BEGIN CERTIFICATE-----"']) {
+      const env = {DATABASE_URL: 'postgresql://postgres:fixture@'+host+':6543/postgres?sslmode=no-verify', DATABASE_CA_CERT: oldValue};
+      const runtimeOptions = databaseConnectionOptions(env);
+      assert.equal(runtimeOptions.ssl.rejectUnauthorized, true);
+      assert.ok(runtimeOptions.ssl.ca.includes(SUPABASE_CA_CERT));
+      assert.ok(runtimeOptions.ssl.ca.includes(rootCertificates[1]));
+      assert.deepEqual(connectionOptions(env).ssl, runtimeOptions.ssl);
+      assert.doesNotThrow(() => createSecureContext(runtimeOptions.ssl));
+    }
+  }
+  assert.throws(() => databaseConnectionOptions({DATABASE_URL:'postgresql://postgres:fixture@aws-0.pooler.supabase.com.evil.test/postgres',DATABASE_CA_CERT:'truncated'}), /DATABASE_CA_CERT_INVALID/);
   assert.throws(() => databaseConnectionOptions({DATABASE_URL: 'postgresql://postgres:[YOUR-PASSWORD]@example.invalid/postgres'}), /DATABASE_URL_INVALID/);
   assert.equal(databaseFailure({code:'28P01',message:'PRIVATE_PASSWORD'}).includes('PRIVATE_PASSWORD'), false);
   assert.equal(databaseFailure({code:'UNRECOGNIZED',message:'PRIVATE_PASSWORD'}).includes('PRIVATE_PASSWORD'), false);
