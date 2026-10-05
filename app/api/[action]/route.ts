@@ -15,6 +15,28 @@ export async function GET(r:Request,c:Ctx){return api(async()=>{
  if(action==='admin'){await admin();const results=await db().batch([db().prepare("SELECT s.id,s.starts,s.enabled,b.id AS booking_id,b.name,b.email,b.phone,b.topic,b.notification_status FROM slots s LEFT JOIN bookings b ON b.slot_id=s.id AND b.status='confirmed' WHERE s.starts>? ORDER BY s.starts").bind(now()-30*86400),db().prepare("SELECT COUNT(*) AS count FROM purchases WHERE status='paid' AND expires>?").bind(now()),db().prepare("SELECT u.email,u.created_at,u.email_confirmed_at,COALESCE(p.expires,0) AS app_expires,COALESCE(cr.minutes,0) AS credit_minutes FROM auth.users u LEFT JOIN LATERAL(SELECT MAX(expires) AS expires FROM purchases WHERE user_id=u.id AND status='paid') p ON true LEFT JOIN LATERAL(SELECT SUM(minutes) AS minutes FROM practice_credits WHERE client_email=u.email AND eligible=true) cr ON true ORDER BY u.created_at DESC LIMIT 300")]);return json({slots:results[0].results,activeAccess:(results[1].results[0] as {count?:number})?.count||0,accounts:results[2].results,paymentReady:paymentReady(),mailReady:bookingMailReady(),notificationEmail:notificationRecipient()})}
  if(action==='progress'){const u=await paid();const p=await db().prepare('SELECT data FROM progress WHERE user_id=?').bind(u.userId).first<{data:string}>();return json({data:p?JSON.parse(p.data):null})}
  if(action==='checkout'){const u=await user();const id=new URL(r.url).searchParams.get('session_id');if(!id||!/^cs_[A-Za-z0-9_]+$/.test(id))fail('Paiement introuvable.');const s=await stripe('checkout/sessions/'+id);if(s.client_reference_id!==u.userId)fail('Paiement associé à un autre compte.',403);await fulfill(s);return json({expires:(await entitlement(u.userId))?.expires||null})}
+ if(action==='calendar-feed'){
+  const token=new URL(r.url).searchParams.get('token')||'';
+  const expected=cfg().CALENDAR_FEED_TOKEN||'';
+  if(!expected||token!==expected)fail('Accès refusé.',403);
+  const {results}=await db().prepare("SELECT id,source_kind,name,phone,client_email,topic,starts,ends,status FROM calendar_reservations WHERE status<>'cancelled' AND starts>? ORDER BY starts LIMIT 500").bind(now()-7*86400).all();
+  const fmt=(t:number)=>new Date(t*1000).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
+  const esc=(s:string)=>String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FrancoRoute//Calendrier//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:FrancoRoute'];
+  for(const a of results as any[]){
+   lines.push('BEGIN:VEVENT');
+   lines.push('UID:'+a.id+'@francoroute.com');
+   lines.push('DTSTAMP:'+fmt(now()));
+   lines.push('DTSTART:'+fmt(a.starts));
+   lines.push('DTEND:'+fmt(a.ends));
+   lines.push('SUMMARY:'+esc((a.source_kind==='call'?'Appel · ':'Pratique · ')+a.name));
+   lines.push('DESCRIPTION:'+esc('Client : '+a.name+' | Tel : '+a.phone+' | Courriel : '+a.client_email+' | '+(a.topic||'')));
+   lines.push('STATUS:'+(a.status==='confirmed'?'CONFIRMED':'TENTATIVE'));
+   lines.push('END:VEVENT');
+  }
+  lines.push('END:VCALENDAR');
+  return new Response(lines.join('\r\n'),{headers:{'Content-Type':'text/calendar; charset=utf-8','Cache-Control':'no-store'}});
+ }
  fail('Page introuvable.',404);
 })}
 export async function POST(r:Request,c:Ctx){return api(async()=>{
