@@ -20,10 +20,12 @@ export async function GET(r:Request,c:Ctx){return api(async()=>{
   const expected=cfg().CALENDAR_FEED_TOKEN||'';
   if(!expected||token!==expected)fail('Accès refusé.',403);
   const {results}=await db().prepare("SELECT id,source_kind,name,phone,client_email,topic,starts,ends,status FROM calendar_reservations WHERE status<>'cancelled' AND starts>? ORDER BY starts LIMIT 500").bind(now()-7*86400).all();
+  const callRows=await db().prepare("SELECT b.id,'call' AS source_kind,b.name,b.phone,b.email AS client_email,b.topic,s.starts,s.starts+900 AS ends,'confirmed' AS status FROM bookings b JOIN slots s ON s.id=b.slot_id WHERE b.status='confirmed' AND s.starts>? AND NOT EXISTS(SELECT 1 FROM calendar_reservations r WHERE r.source_kind='call' AND r.source_id=b.id) ORDER BY s.starts LIMIT 300").bind(now()-7*86400).all();
+  const events=([...(results as any[]),...(callRows.results as any[])]).sort((x:any,y:any)=>x.starts-y.starts);
   const fmt=(t:number)=>new Date(t*1000).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
   const esc=(s:string)=>String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
   const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//FrancoRoute//Calendrier//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:FrancoRoute'];
-  for(const a of results as any[]){
+  for(const a of events){
    lines.push('BEGIN:VEVENT');
    lines.push('UID:'+a.id+'@francoroute.com');
    lines.push('DTSTAMP:'+fmt(now()));
