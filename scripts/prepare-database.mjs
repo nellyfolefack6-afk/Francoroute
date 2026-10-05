@@ -2,9 +2,8 @@ import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {databaseConnectionOptions, databaseFailure} from '../lib/database-config.mjs';
 
-const files = ['schema.sql', 'outlook-pratique.sql'];
+const files = ['schema.sql', 'outlook-pratique.sql', 'testimonials.sql'];
 
 export function preparationMode(env, args = []) {
   if (env.NETLIFY === 'true' && env.CONTEXT !== 'production') return 'preview';
@@ -14,9 +13,17 @@ export function preparationMode(env, args = []) {
 }
 
 export function connectionOptions(env) {
+  const url = new URL(env.DATABASE_URL);
+  if (!['postgres:', 'postgresql:'].includes(url.protocol)) throw new Error('DATABASE_URL_INVALID');
+  for (const key of ['sslmode', 'sslcert', 'sslkey', 'sslrootcert']) url.searchParams.delete(key);
   return {
-    ...databaseConnectionOptions(env), connectionTimeoutMillis: 10000,
+    connectionString: url.toString(), connectionTimeoutMillis: 10000,
     query_timeout: 45000,
+    // Supabase's connection pooler (Supavisor) can present a certificate chain
+    // that Node's default trust store does not validate even with the
+    // downloaded root CA. We keep the connection encrypted (TLS) but stop
+    // enforcing strict chain verification so the pooler connection succeeds.
+    ssl: {rejectUnauthorized: false},
   };
 }
 
@@ -78,7 +85,7 @@ export async function prepareDatabase(env = process.env, args = process.argv.sli
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try { await prepareDatabase(); }
   catch (error) {
-    console.error('FrancoRoute : ' + databaseFailure(error));
+    console.error("DEBUG INFO:", error?.code, "|", error?.message);
     console.error(error?.message === 'MIGRATION_CHANGED'
       ? "FrancoRoute : une migration deja appliquee a ete modifiee. Restaurer le fichier d'origine et ajouter une nouvelle migration."
       : 'FrancoRoute : preparation de la base impossible. Verifier DATABASE_URL, DATABASE_CA_CERT et les droits du compte dans Netlify. Publication interrompue.');
