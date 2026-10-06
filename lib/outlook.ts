@@ -27,7 +27,7 @@ async function tokens(fields:Record<string,string>){
  return data as {access_token:string;refresh_token?:string;expires_in:number};
 }
 export async function outlookStatus(){
- if(!outlookConfigured())return {configured:false,connected:false};
+ if(!outlookConfigured())return {configured:false,connected:true,account:'calendrier interne FrancoRoute',calendar:'sans Outlook'};
  const c=await db().prepare('SELECT account_email,calendar_name,updated FROM outlook_connection WHERE id=1').first();
  return {configured:true,connected:!!c,account:c?.account_email,calendar:c?.calendar_name};
 }
@@ -91,6 +91,7 @@ function graphTime(value:{dateTime:string;timeZone:string}){
  const result=Date.parse(utc)/1000;if(!Number.isFinite(result))throw new Error('Invalid Outlook date');return result;
 }
 export async function outlookBusy(starts:number,ends:number):Promise<Busy[]>{
+ if(!outlookConfigured())return [];
  const c=await connection(), range=new URLSearchParams({startDateTime:new Date(starts*1000).toISOString(),endDateTime:new Date(ends*1000).toISOString(),'$select':'id,start,end,showAs,isCancelled','$top':'1000'});
  let path='/me/calendars/'+encodeURIComponent(c.calendarId)+'/calendarView?'+range;
  const busy:Busy[]=[];let pages=0;
@@ -105,9 +106,10 @@ export async function outlookBusy(starts:number,ends:number):Promise<Busy[]>{
  return busy;
 }
 export async function createOutlookEvent(row:{id:string;source_kind:string;name:string;client_email:string;phone:string;topic:string;starts:number;ends:number}){
+ if(!outlookConfigured())return 'local-'+row.id;
  const c=await connection();
  // No attendees: appointments are saved in the school's calendar without sending invitations.
  const data=await graphWithToken(c.accessToken,'/me/calendars/'+encodeURIComponent(c.calendarId)+'/events',{method:'POST',body:JSON.stringify({transactionId:row.id,subject:'FrancoRoute — '+(row.source_kind==='call'?'Premier appel':'Pratique')+' · '+row.name,start:{dateTime:new Date(row.starts*1000).toISOString(),timeZone:'UTC'},end:{dateTime:new Date(row.ends*1000).toISOString(),timeZone:'UTC'},showAs:'busy',isReminderOn:true,reminderMinutesBeforeStart:15,body:{contentType:'text',content:['Réservation FrancoRoute',row.topic,'Nom : '+row.name,'Courriel : '+row.client_email,'Téléphone : '+row.phone,'Heure de l’Est · Référence : '+row.id,'Pour modifier ou annuler : '+cfg().SITE_ORIGIN+'/gestion'].join('\n')}})});
  if(!data?.id)throw new Error('Unconfirmed Outlook event');return data.id as string;
 }
-export async function deleteOutlookEvent(id:string){const c=await connection();await graphWithToken(c.accessToken,'/me/calendars/'+encodeURIComponent(c.calendarId)+'/events/'+encodeURIComponent(id),{method:'DELETE'});}
+export async function deleteOutlookEvent(id:string){if(!outlookConfigured())return;const c=await connection();await graphWithToken(c.accessToken,'/me/calendars/'+encodeURIComponent(c.calendarId)+'/events/'+encodeURIComponent(id),{method:'DELETE'});}
